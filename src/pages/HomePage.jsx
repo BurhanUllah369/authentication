@@ -1,57 +1,62 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { API_ENDPOINTS } from "../api/api";
 import axios from "axios";
-import { Link, useNavigate } from "react-router-dom";
-import { jwtDecode } from "jwt-decode";
 
 const HomePage = () => {
-  const [userName, setUserName] = useState("");
-  const [userId, setUserId] = useState("");
-  const navigate = useNavigate()
+  const navigate = useNavigate();
+  const [username, setUsername] = useState("");
+  const [err, setErr] = useState("");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  // useEffect(() => {
-  //   const accessToken = localStorage.getItem("accessToken");
-  //   if (accessToken) {
-  //     const decodedToken = jwtDecode(accessToken);
-  //     setUserId(decodedToken.userId);
+  const getUserData = async (token) => {
+    try {
+      const response = await axios.get(API_ENDPOINTS.GET_USER_DATA, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setUsername(response.data.user_name);
+    } catch (error) {
+      setErr("Some Error Occured");
+    }
+  };
 
-  //     axios.get(BASE_URL, {
-  //       headers: {
-  //         Authorization: `Bearer ${accessToken}`
-  //       }
-  //     })
-  //     .then(response => {
-  //       const { username } = response.data;
-  //       setUserName(username);
-  //       console.log(username)
-  //     })
-  //     .catch(error => {
-  //       console.error("Failed to fetch user data:", error);
-  //     });
-  //   }
-  // }, []);
+  useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      getUserData(token);
+    }
+    token ? setIsLoggedIn(true) : setIsLoggedIn(false);
+  }, []);
 
   const logout = () => {
     localStorage.removeItem("accessToken");
-    navigate("/login")
+    navigate("/login");
   };
+
+  const login = () => {
+    navigate("/login")
+  }
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-4">Welcome, {userName}</h1>
-      <button
-        onClick={logout}
-        className="bg-red-500 text-white py-2 px-4 rounded-md"
-      >
-        Logout
-      </button>
-      {/* <div className="flex gap-8 mt-8">
-        <Link className="text-blue-500 underline" to="/register">
-          Register
-        </Link>
-        <Link className="text-blue-500 underline" to="/login">
+      <h1 className="text-3xl font-bold mb-4">{isLoggedIn ? `Welcome, ${username}`: "Please Login"}</h1>
+      {isLoggedIn ? (
+        <button
+          onClick={logout}
+          className="bg-red-500 text-white py-2 px-4 rounded-md"
+        >
+          Logout
+        </button>
+      ) : (
+        <button
+          onClick={login}
+          className="bg-blue-500 text-white py-2 px-4 rounded-md"
+        >
           Login
-        </Link>
-      </div> */}
+        </button>
+      )}
+
+      {err ? <p className="text-red-600 mt-4">{err}</p> : null}
     </div>
   );
 };
